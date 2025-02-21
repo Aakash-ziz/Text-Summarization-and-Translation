@@ -7,121 +7,98 @@ const TextProcessor = () => {
   const [questions, setQuestions] = useState([]);
   const [translatedText, setTranslatedText] = useState("");
   const [targetLanguage, setTargetLanguage] = useState("French");
+  const [loading, setLoading] = useState({ summary: false, questions: false, translation: false });
 
-  const [loadingSummary, setLoadingSummary] = useState(false);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [loadingTranslation, setLoadingTranslation] = useState(false);
+  const handleAction = async (action) => {
+    if (!text.trim()) return alert("Please enter text before proceeding.");
+    
+    setLoading((prev) => ({ ...prev, [action]: true }));
 
-  const handleSummarize = async () => {
-    if (!text.trim()) {
-      alert("Please enter text to summarize.");
-      return;
-    }
-    setLoadingSummary(true);
-    const result = await summarizeTextWithGroq(text);
-    setSummary(result);
-    setLoadingSummary(false);
-  };
+    let result;
+    if (action === "summary") result = await summarizeTextWithGroq(text);
+    if (action === "questions") result = await generateQuestionsFromGroq(summary);
+    if (action === "translation") result = await translateTextWithGroq(summary, targetLanguage);
 
-  const handleGenerateQuestions = async () => {
-    if (!summary.trim()) {
-      alert("Please summarize the text first.");
-      return;
-    }
-    setLoadingQuestions(true);
-    const generatedQuestions = await generateQuestionsFromGroq(summary);
-    setQuestions(generatedQuestions);
-    setLoadingQuestions(false);
-  };
+    if (action === "summary") setSummary(result);
+    if (action === "questions") setQuestions(result);
+    if (action === "translation") setTranslatedText(result);
 
-  const handleTranslate = async () => {
-    if (!summary.trim()) {
-      alert("Please summarize the text first.");
-      return;
-    }
-    setLoadingTranslation(true);
-    const translated = await translateTextWithGroq(summary, targetLanguage);
-    setTranslatedText(translated);
-    setLoadingTranslation(false);
+    setLoading((prev) => ({ ...prev, [action]: false }));
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-12 py-10">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center w-full">
-        Text Summarizer, Question Generator & Translator
-      </h1>
+    <div className="min-h-screen w-full bg-gray-900 text-white flex flex-col items-center justify-center px-6 py-12">
+      <h1 className="text-4xl font-bold mb-8 text-center text-blue-400">AI-Powered Text Processor</h1>
 
-      <div className="w-full max-w-screen-2xl grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Input Section */}
-        <div className="bg-white p-8 rounded-xl shadow-lg w-full">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-5">Enter Text</h2>
+        <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full">
+          <h2 className="text-xl font-semibold mb-4">Enter Text</h2>
           <textarea
-            className="w-full p-5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
-            rows="10"
+            className="w-full p-4 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none"
+            rows="6"
             placeholder="Enter your text here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
           ></textarea>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex flex-col space-y-5">
+          <div className="mt-6 space-y-4">
             <button
-              onClick={handleSummarize}
-              className="bg-green-500 text-white py-4 rounded-lg text-lg font-medium hover:bg-green-600 transition"
-              disabled={loadingSummary}
+              onClick={() => handleAction("summary")}
+              className="w-full bg-blue-500 text-white py-3 rounded-md font-medium hover:bg-blue-600 transition disabled:bg-gray-500"
+              disabled={loading.summary}
             >
-              {loadingSummary ? "Summarizing..." : "Summarize"}
+              {loading.summary ? "Summarizing..." : "Summarize"}
             </button>
 
             <button
-              onClick={handleGenerateQuestions}
-              className="bg-blue-500 text-white py-4 rounded-lg text-lg font-medium hover:bg-blue-600 transition"
-              disabled={loadingQuestions}
+              onClick={() => handleAction("questions")}
+              className="w-full bg-green-500 text-white py-3 rounded-md font-medium hover:bg-green-600 transition disabled:bg-gray-500"
+              disabled={loading.questions || !summary}
             >
-              {loadingQuestions ? "Generating Questions..." : "Generate Questions"}
+              {loading.questions ? "Generating..." : "Generate Questions"}
             </button>
 
-            {/* Translation Selection */}
+            {/* Translation Dropdown */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Translate To:</label>
+              <label className="block font-semibold mb-2">Translate To:</label>
               <select
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none"
+                className="w-full p-3 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-2 focus:ring-purple-400 outline-none"
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value)}
               >
-                <option value="French">French</option>
-                <option value="Spanish">Spanish</option>
-                <option value="German">German</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Chinese">Chinese</option>
+                {["French", "Spanish", "German", "Chinese", "Tamil"].map((lang) => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
               </select>
             </div>
 
             <button
-              onClick={handleTranslate}
-              className="bg-purple-500 text-white py-4 rounded-lg text-lg font-medium hover:bg-purple-600 transition"
-              disabled={loadingTranslation}
+              onClick={() => handleAction("translation")}
+              className="w-full bg-purple-500 text-white py-3 rounded-md font-medium hover:bg-purple-600 transition disabled:bg-gray-500"
+              disabled={loading.translation || !summary}
             >
-              {loadingTranslation ? "Translating..." : "Translate Summary"}
+              {loading.translation ? "Translating..." : "Translate Summary"}
             </button>
           </div>
         </div>
 
         {/* Right Column - Output Section */}
-        <div className="bg-white p-8 rounded-xl shadow-lg w-full">
+        <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full">
           {summary && (
             <div className="mb-6">
-              <h3 className="text-2xl font-semibold text-gray-700">Summary</h3>
-              <p className="p-5 bg-gray-50 border border-gray-200 rounded-lg">{summary}</p>
+              <h3 className="text-xl font-semibold">Summary</h3>
+              <p className="p-4 bg-gray-700 border border-gray-600 rounded-md">{summary}</p>
             </div>
           )}
 
           {questions.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-2xl font-semibold text-gray-700">Generated Questions</h3>
-              <ul className="list-disc pl-6 bg-gray-50 p-5 border border-gray-200 rounded-lg">
+              <h3 className="text-xl font-semibold">Generated Questions</h3>
+              <ul className="list-disc pl-5 bg-gray-700 p-4 border border-gray-600 rounded-md">
                 {questions.map((q, index) => (
-                  <li key={index} className="text-gray-600 text-lg">{q}</li>
+                  <li key={index} className="text-gray-300">{q}</li>
                 ))}
               </ul>
             </div>
@@ -129,10 +106,11 @@ const TextProcessor = () => {
 
           {translatedText && (
             <div>
-              <h3 className="text-2xl font-semibold text-gray-700">
+              <h3 className="text-xl font-semibold">
                 Translated Summary ({targetLanguage})
               </h3>
-              <p className="p-5 bg-gray-50 border border-gray-200 rounded-lg">{translatedText}</p>
+              <p className="p-4 bg-gray-700 border border-gray-600 rounded-md">{translatedText}</p>
+              {console.log(targetLanguage)}
             </div>
           )}
         </div>
