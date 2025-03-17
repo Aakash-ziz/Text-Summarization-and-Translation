@@ -15,7 +15,7 @@ const TextProcessor = () => {
     setLoading((prev) => ({ ...prev, [action]: true }));
 
     let result;
-    if (action === "summary") result = await summarizeTextWithGroq(text);
+    if (action === "summary") result = await summarizeTextWithGroq(text, { length: 50, simplicity: true });
     if (action === "questions") result = await generateQuestionsFromGroq(summary);
     if (action === "translation") result = await translateTextWithGroq(summary, targetLanguage);
 
@@ -31,7 +31,6 @@ const TextProcessor = () => {
       <h1 className="text-4xl font-bold mb-8 text-center text-blue-400">AI-Powered Text Processor</h1>
 
       <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Input Section */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full">
           <h2 className="text-xl font-semibold mb-4">Enter Text</h2>
           <textarea
@@ -42,7 +41,6 @@ const TextProcessor = () => {
             onChange={(e) => setText(e.target.value)}
           ></textarea>
 
-          {/* Action Buttons */}
           <div className="mt-6 space-y-4">
             <button
               onClick={() => handleAction("summary")}
@@ -60,7 +58,6 @@ const TextProcessor = () => {
               {loading.questions ? "Generating..." : "Generate Questions"}
             </button>
 
-            {/* Translation Dropdown */}
             <div>
               <label className="block font-semibold mb-2">Translate To:</label>
               <select
@@ -68,7 +65,7 @@ const TextProcessor = () => {
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value)}
               >
-                {["French", "Spanish", "German", "Chinese", "Tamil"].map((lang) => (
+                {["French", "Spanish", "German", "Chinese"].map((lang) => (
                   <option key={lang} value={lang}>{lang}</option>
                 ))}
               </select>
@@ -84,7 +81,6 @@ const TextProcessor = () => {
           </div>
         </div>
 
-        {/* Right Column - Output Section */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full">
           {summary && (
             <div className="mb-6">
@@ -110,7 +106,6 @@ const TextProcessor = () => {
                 Translated Summary ({targetLanguage})
               </h3>
               <p className="p-4 bg-gray-700 border border-gray-600 rounded-md">{translatedText}</p>
-              {console.log(targetLanguage)}
             </div>
           )}
         </div>
